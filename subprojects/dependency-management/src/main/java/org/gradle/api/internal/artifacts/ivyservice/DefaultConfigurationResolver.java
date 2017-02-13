@@ -58,6 +58,7 @@ import org.gradle.api.specs.Specs;
 import org.gradle.internal.Transformers;
 import org.gradle.internal.component.local.model.DslOriginDependencyMetadata;
 import org.gradle.internal.component.model.DependencyMetadata;
+import org.gradle.internal.progress.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationProcessor;
 import org.gradle.util.CollectionUtils;
 
@@ -81,6 +82,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
     private final ImmutableAttributesFactory attributesFactory;
     private final ImmutableModuleIdentifierFactory moduleIdentifierFactory;
     private final ModuleExclusions moduleExclusions;
+    private final BuildOperationExecutor buildOperationExecutor;
     private final BuildOperationProcessor buildOperationProcessor;
 
     public DefaultConfigurationResolver(ArtifactDependencyResolver resolver, RepositoryHandler repositories,
@@ -88,7 +90,8 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
                                         ResolutionResultsStoreFactory storeFactory, boolean buildProjectDependencies,
                                         AttributesSchema attributesSchema, BuildOperationProcessor buildOperationProcessor, ArtifactTransforms artifactTransforms,
                                         ImmutableAttributesFactory attributesFactory, ImmutableModuleIdentifierFactory moduleIdentifierFactory,
-                                        ModuleExclusions moduleExclusions) {
+                                        ModuleExclusions moduleExclusions,
+                                        BuildOperationExecutor buildOperationExecutor) {
         this.resolver = resolver;
         this.repositories = repositories;
         this.metadataHandler = metadataHandler;
@@ -101,6 +104,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
         this.attributesFactory = attributesFactory;
         this.moduleIdentifierFactory = moduleIdentifierFactory;
         this.moduleExclusions = moduleExclusions;
+        this.buildOperationExecutor = buildOperationExecutor;
     }
 
     @Override
@@ -151,7 +155,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
 
         TransientConfigurationResultsLoader transientConfigurationResultsFactory = new TransientConfigurationResultsLoader(transientConfigurationResultsBuilder, graphResults);
 
-        DefaultLenientConfiguration result = new DefaultLenientConfiguration(configuration, cacheLockingManager, graphResults.getUnresolvedDependencies(), artifactResults, resolveState.fileDependencyResults, transientConfigurationResultsFactory, artifactTransforms);
+        DefaultLenientConfiguration result = new DefaultLenientConfiguration(configuration, cacheLockingManager, graphResults.getUnresolvedDependencies(), artifactResults, resolveState.fileDependencyResults, transientConfigurationResultsFactory, artifactTransforms, buildOperationExecutor);
         results.artifactsResolved(new DefaultResolvedConfiguration(result, configuration.getAttributes()), result);
     }
 
