@@ -140,7 +140,7 @@ class ProgressEvents implements ProgressListener {
     // Ignore this check for TestOperationDescriptors as they are currently not unique when coming from different test tasks
     // Ignore resolve artifact operations as they are not necessarily unique atm
     boolean uniqueBuildOperation(OperationDescriptor operationDescriptor) {
-        return !(operationDescriptor instanceof TestOperationDescriptor) && !operationDescriptor.displayName.startsWith("Resolve artifact ")
+        return !(operationDescriptor instanceof TestOperationDescriptor) && !operationDescriptor.displayName.startsWith("Resolve artifact")
     }
 
     /**
