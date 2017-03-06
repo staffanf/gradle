@@ -160,6 +160,11 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
                 }
 
                 @Override
+                public boolean requiresDownloadedArtifactFiles() {
+                    return visitor.requiresDownloadedArtifactFiles();
+                }
+
+                @Override
                 public boolean includeFiles() {
                     return visitor.includeFiles();
                 }
@@ -283,6 +288,11 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
         @Override
         public boolean includeFiles() {
             return visitor.includeFiles();
+        }
+
+        @Override
+        public boolean requiresDownloadedArtifactFiles() {
+            return visitor.requiresDownloadedArtifactFiles();
         }
 
         @Override
