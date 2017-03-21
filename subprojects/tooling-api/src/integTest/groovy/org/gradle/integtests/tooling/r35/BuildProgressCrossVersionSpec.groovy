@@ -74,20 +74,24 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
         configureBuild.children.contains(configureRoot)
 
         def resolveCompile = events.operation("Resolve dependencies :compile")
-        def resolveArtifactAinRoot = events.operation(configureRoot, "Resolve artifact a.jar (project :a)")
-        def resolveArtifactBinRoot = events.operation(configureRoot, "Resolve artifact b.jar (project :b)")
+        def resolveArtifactsInRoot = events.operation("Resolve artifacts :compile")
+        def resolveArtifactAinRoot = events.operation(resolveArtifactsInRoot, "Resolve artifact a.jar (project :a)")
+        def resolveArtifactBinRoot = events.operation(resolveArtifactsInRoot, "Resolve artifact b.jar (project :b)")
         resolveCompile.parent == configureRoot
-        configureRoot.children == [resolveCompile, resolveArtifactAinRoot, resolveArtifactBinRoot]
+        configureRoot.children == [resolveCompile, resolveArtifactsInRoot]
+        resolveArtifactsInRoot.children == [resolveArtifactAinRoot, resolveArtifactBinRoot]
 
         def configureA = events.operation("Configure project :a")
         configureA.parent == resolveCompile
         resolveCompile.children == [configureA]
 
         def resolveCompileA = events.operation("Resolve dependencies :a:compile")
-        def resolveArtifactBinA = events.operation(configureA, "Resolve artifact b.jar (project :b)")
+        def resolveArtifactsInA = events.operation("Resolve artifacts :a:compile")
+        def resolveArtifactBinA = events.operation(resolveArtifactsInA, "Resolve artifact b.jar (project :b)")
 
         resolveCompileA.parent == configureA
-        configureA.children == [resolveCompileA, resolveArtifactBinA]
+        configureA.children == [resolveCompileA, resolveArtifactsInA]
+        resolveArtifactsInA.children == [resolveArtifactBinA]
 
         def configureB = events.operation("Configure project :b")
         configureB.parent == resolveCompileA
@@ -154,6 +158,7 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
         configureBuild.children.contains(configureRoot)
 
         def resolveCompile = events.operation("Resolve dependencies :compile")
+        def resolveArtifacts = events.operation("Resolve artifacts :compile")
         def resolveArtifactA = events.operation("Resolve artifact a.jar (project :a)")
         def resolveArtifactB = events.operation("Resolve artifact projectB.jar (group:projectB:1.0)")
         def resolveArtifactC = events.operation("Resolve artifact projectC.jar (group:projectC:1.5)")
@@ -166,7 +171,8 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
         def downloadDPom = events.operation("Download http://localhost:${server.port}${projectD.pomPath}")
         def downloadDMavenMetadata = events.operation("Download http://localhost:${server.port}${projectD.metaDataPath}")
         resolveCompile.parent == configureRoot
-        configureRoot.children == [resolveCompile, resolveArtifactA, resolveArtifactB, resolveArtifactC, resolveArtifactD]
+        configureRoot.children == [resolveCompile, resolveArtifacts]
+        resolveArtifacts.children == [resolveArtifactA, resolveArtifactB, resolveArtifactC, resolveArtifactD]
 
         def configureA = events.operation("Configure project :a")
         configureA.parent == resolveCompile
