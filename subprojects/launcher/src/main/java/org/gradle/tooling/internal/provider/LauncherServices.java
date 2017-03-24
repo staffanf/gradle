@@ -93,7 +93,8 @@ public class LauncherServices implements PluginServiceRegistry, GradleUserHomeSc
             };
             SubscribableBuildActionRunner buildActionRunner = new SubscribableBuildActionRunner(
                 new RunAsBuildOperationBuildActionRunner(
-                    new ChainingBuildActionRunner(runnersFactory),
+                    new ValidatingBuildActionRunner(
+                        new ChainingBuildActionRunner(runnersFactory)),
                     buildOperationExecutor),
                 buildOperationService, registrationsFactory);
             return new SubscribableBuildActionRunnerProvider(buildActionRunner);
