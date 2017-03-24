@@ -160,8 +160,8 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
                 }
 
                 @Override
-                public boolean requiresDownloadedArtifactFiles() {
-                    return visitor.requiresDownloadedArtifactFiles();
+                public boolean canPerformPreemptiveDownload() {
+                    return visitor.canPerformPreemptiveDownload();
                 }
 
                 @Override
@@ -291,8 +291,8 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
         }
 
         @Override
-        public boolean requiresDownloadedArtifactFiles() {
-            return visitor.requiresDownloadedArtifactFiles();
+        public boolean canPerformPreemptiveDownload() {
+            return visitor.canPerformPreemptiveDownload();
         }
 
         @Override
