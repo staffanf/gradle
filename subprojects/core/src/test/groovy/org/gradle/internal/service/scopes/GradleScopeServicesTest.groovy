@@ -30,7 +30,6 @@ import org.gradle.execution.ProjectConfigurer
 import org.gradle.execution.TaskGraphExecuter
 import org.gradle.execution.TaskSelector
 import org.gradle.execution.taskgraph.DefaultTaskGraphExecuter
-import org.gradle.internal.work.ProjectLockService
 import org.gradle.initialization.BuildCancellationToken
 import org.gradle.internal.operations.BuildOperationWorkerRegistry
 import org.gradle.internal.time.TimeProvider
@@ -41,6 +40,8 @@ import org.gradle.internal.event.ListenerManager
 import org.gradle.internal.progress.BuildOperationExecutor
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
+import org.gradle.internal.resources.ResourceLockCoordinationService
+import org.gradle.internal.work.WorkerLeaseService
 import org.gradle.model.internal.inspect.ModelRuleSourceDetector
 import spock.lang.Specification
 
@@ -69,7 +70,8 @@ public class GradleScopeServicesTest extends Specification {
         parent.get(ModelRuleSourceDetector) >> Stub(ModelRuleSourceDetector)
         parent.get(TimeProvider) >> Stub(TimeProvider)
         parent.get(BuildOperationExecutor) >> Stub(BuildOperationExecutor)
-        parent.get(ProjectLockService) >> Stub(ProjectLockService)
+        parent.get(WorkerLeaseService) >> Stub(WorkerLeaseService)
+        parent.get(ResourceLockCoordinationService) >> Stub(ResourceLockCoordinationService)
         parent.get(Instantiator) >> Stub(Instantiator)
         parent.get(BuildOperationWorkerRegistry) >> Stub(BuildOperationWorkerRegistry)
         gradle.getStartParameter() >> startParameter

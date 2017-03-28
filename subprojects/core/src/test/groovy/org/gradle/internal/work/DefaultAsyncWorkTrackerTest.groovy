@@ -16,18 +16,18 @@
 
 package org.gradle.internal.work
 
-import org.gradle.internal.event.ListenerManager
 import org.gradle.internal.exceptions.DefaultMultiCauseException
 import org.gradle.internal.progress.BuildOperationExecutor
+import org.gradle.internal.resources.DefaultResourceLockCoordinationService
+import org.gradle.internal.resources.ProjectLockService
+import org.gradle.internal.resources.ResourceLockCoordinationService
 import org.gradle.test.fixtures.concurrent.ConcurrentSpec
 
 
 class DefaultAsyncWorkTrackerTest extends ConcurrentSpec {
-    def projectLockBroadcast = Mock(ProjectLockListener)
-    def listenerManager = Mock(ListenerManager) {
-        _ * getBroadcaster(ProjectLockListener) >> projectLockBroadcast
-    }
-    AsyncWorkTracker asyncWorkTracker = new DefaultAsyncWorkTracker(new DefaultWorkerLeaseService(listenerManager, true, 1))
+    ResourceLockCoordinationService coordinationService = new DefaultResourceLockCoordinationService()
+    WorkerLeaseService workerLeaseService = new DefaultWorkerLeaseService(coordinationService, true, 1)
+    AsyncWorkTracker asyncWorkTracker = new DefaultAsyncWorkTracker(workerLeaseService)
 
     def "can wait for async work to complete"() {
         def operation = Mock(BuildOperationExecutor.Operation)

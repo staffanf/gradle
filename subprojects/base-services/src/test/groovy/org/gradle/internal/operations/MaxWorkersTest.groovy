@@ -17,7 +17,7 @@
 package org.gradle.internal.operations
 
 import org.gradle.internal.concurrent.DefaultExecutorFactory
-import org.gradle.internal.event.ListenerManager
+import org.gradle.internal.resources.DefaultResourceLockCoordinationService
 import org.gradle.internal.work.DefaultWorkerLeaseService
 import org.gradle.test.fixtures.concurrent.ConcurrentSpec
 
@@ -142,6 +142,6 @@ class MaxWorkersTest extends ConcurrentSpec {
     }
 
     BuildOperationWorkerRegistry buildOperationWorkerRegistry(int maxWorkers) {
-        return new DefaultWorkerLeaseService(Mock(ListenerManager), true, maxWorkers)
+        return new DefaultWorkerLeaseService(new DefaultResourceLockCoordinationService(), true, maxWorkers)
     }
 }

@@ -28,8 +28,10 @@ import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.TaskDependency
 import org.gradle.execution.TaskFailureHandler
 import org.gradle.initialization.BuildCancellationToken
-import org.gradle.internal.work.ProjectLock
-import org.gradle.internal.work.ProjectLockService
+import org.gradle.internal.resources.ResourceLock
+import org.gradle.internal.resources.ResourceLockCoordinationService
+import org.gradle.internal.work.WorkerLeaseService
+import org.gradle.internal.resources.ResourceLockState
 import org.gradle.test.fixtures.AbstractProjectBuilderSpec
 import org.gradle.util.TextUtil
 import spock.lang.Issue
@@ -44,11 +46,12 @@ public class DefaultTaskExecutionPlanTest extends AbstractProjectBuilderSpec {
     DefaultTaskExecutionPlan executionPlan
     ProjectInternal root;
     def cancellationHandler = Mock(BuildCancellationToken)
-    def projectLockService = Mock(ProjectLockService)
+    def workerLeaseService = Mock(WorkerLeaseService)
+    def coordinationService = Mock(ResourceLockCoordinationService)
 
     def setup() {
         root = createRootProject(temporaryFolder.testDirectory);
-        executionPlan = new DefaultTaskExecutionPlan(cancellationHandler, projectLockService)
+        executionPlan = new DefaultTaskExecutionPlan(cancellationHandler, coordinationService, workerLeaseService)
     }
 
     def "schedules tasks in dependency order"() {
@@ -735,7 +738,11 @@ public class DefaultTaskExecutionPlanTest extends AbstractProjectBuilderSpec {
 
     def "clear removes all tasks"() {
         given:
-        Task a = task("a");
+        _ * coordinationService.withStateLock(_) >> { args ->
+            args[0].transform(Mock(ResourceLockState))
+            return true
+        }
+        Task a = task("a")
 
         when:
         addToGraphAndPopulate(toList(a))
@@ -748,6 +755,10 @@ public class DefaultTaskExecutionPlanTest extends AbstractProjectBuilderSpec {
 
     def "can add additional tasks after execution and clear"() {
         given:
+        _ * coordinationService.withStateLock(_) >> { args ->
+            args[0].transform(Mock(ResourceLockState))
+            return true
+        }
         Task a = task("a")
         Task b = task("b")
 
@@ -857,11 +868,15 @@ public class DefaultTaskExecutionPlanTest extends AbstractProjectBuilderSpec {
 
     def getExecutedTasks() {
         def tasks = []
-        _ * projectLockService.getProjectLock(_) >> Mock(ProjectLock) {
-            _ * tryWithProjectLock(_) >> { args ->
-                args[0].run()
-                return true
-            }
+        _ * workerLeaseService.getWorkerLease() >> Mock(ResourceLock) {
+            _ * tryLock() >> true
+        }
+        _ * workerLeaseService.getProjectLock(_) >> Mock(ResourceLock) {
+            _ * tryLock() >> true
+        }
+        _ * coordinationService.withStateLock(_) >> { args ->
+            args[0].transform(Mock(ResourceLockState))
+            return true
         }
         def moreTasks = true
         while (moreTasks) {

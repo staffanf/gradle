@@ -18,6 +18,7 @@ package org.gradle.internal.work;
 
 import org.gradle.internal.concurrent.Stoppable;
 import org.gradle.internal.operations.BuildOperationWorkerRegistry;
+import org.gradle.internal.resources.ProjectLockService;
 
 public interface WorkerLeaseService extends BuildOperationWorkerRegistry, ProjectLockService, Stoppable {
 

@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.work;
+package org.gradle.internal.resources;
 
-public interface ProjectLockListener {
+public interface ResourceLockState {
     /**
-     * Fired when a project is unlocked.
-     *
-     * @param projectPath - the path of the project that was unlocked
+     * Possible results from a resource lock state transform.
      */
-    void onProjectUnlock(String projectPath);
+    enum Disposition { FAILED, FINISHED, RETRY }
+
+    /**
+     * Registers a resource lock to be rolled back if the transform associated with this resource lock state
+     * fails.
+     *
+     * @param resourceLock
+     */
+    void registerLocked(ResourceLock resourceLock);
 }

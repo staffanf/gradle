@@ -16,6 +16,8 @@
 
 package org.gradle.internal.operations;
 
+import org.gradle.internal.resources.ResourceLock;
+
 /**
  * Used to obtain and release leases to run a build operation. There are a limited number of leases available and this service is used to allocate these to worker threads.
  *
@@ -43,6 +45,14 @@ public interface BuildOperationWorkerRegistry {
      * Returns the build operation associated with the current thread. Allows child operations to be created for this operation. Fails when there is no operation associated with this thread.
      */
     Operation getCurrent();
+
+    /**
+     * Gets a {@link ResourceLock} that can be used to reserve a worker lease.  Note that this does not actually reserve a lease,
+     * it simply creates a {@link ResourceLock} representing the worker lease.  The worker lease can be reserved only when
+     * {@link ResourceLock#tryLock()} is called from a {@link org.gradle.internal.resources.ResourceLockCoordinationService#withStateLock(Transformer)}
+     * transform.
+     */
+    ResourceLock getWorkerLease();
 
     interface Operation {
         /**

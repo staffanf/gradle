@@ -29,7 +29,6 @@ import org.gradle.deployment.internal.DefaultDeploymentRegistry
 import org.gradle.deployment.internal.DeploymentRegistry
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.concurrent.ExecutorFactory
-import org.gradle.internal.event.ListenerManager
 import org.gradle.internal.installation.CurrentGradleInstallation
 import org.gradle.internal.jvm.inspection.JvmVersionDetector
 import org.gradle.internal.logging.events.OutputEventListener
@@ -39,8 +38,7 @@ import org.gradle.internal.operations.DefaultBuildOperationProcessor
 import org.gradle.internal.remote.MessagingServer
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.internal.work.DefaultWorkerLeaseService
-import org.gradle.internal.work.ProjectLockListener
-import org.gradle.internal.work.ProjectLockService
+import org.gradle.internal.resources.ProjectLockService
 import org.gradle.process.internal.JavaExecHandleFactory
 import org.gradle.process.internal.health.memory.MemoryManager
 import org.gradle.process.internal.worker.DefaultWorkerProcessFactory
@@ -63,9 +61,6 @@ class BuildSessionScopeServicesTest extends Specification {
         parent.get(ModuleRegistry) >> new DefaultModuleRegistry(CurrentGradleInstallation.get())
         parent.get(FileResolver) >> Stub(FileResolver)
         parent.get(OutputEventListener) >> Stub(OutputEventListener)
-        parent.get(ListenerManager) >> Stub(ListenerManager) {
-            _ * getBroadcaster(ProjectLockListener) >> Stub(ProjectLockListener)
-        }
     }
 
     def "provides a DeploymentRegistry"() {

@@ -16,10 +16,15 @@
 
 package org.gradle.internal.work
 
-import org.gradle.internal.event.ListenerManager
+import org.gradle.internal.resources.DefaultResourceLockCoordinationService
+import org.gradle.internal.resources.ResourceLockCoordinationService
 import org.gradle.test.fixtures.concurrent.ConcurrentSpec
 
-class DefaultWorkerManagementServiceBuildOperationWorkerRegistryTest extends ConcurrentSpec {
+import static org.gradle.internal.resources.ResourceLockOperations.lock
+
+class DefaultWorkerLeaseServiceBuildOperationWorkerRegistryTest extends ConcurrentSpec {
+    ResourceLockCoordinationService coordinationService = new DefaultResourceLockCoordinationService()
+
     def "operation starts immediately when there are sufficient leases available"() {
         def registry = workerLeaseService(2)
 
@@ -254,7 +259,18 @@ class DefaultWorkerManagementServiceBuildOperationWorkerRegistryTest extends Con
         registry?.stop()
     }
 
+    def "can get worker lease resource lock"() {
+        def registry = workerLeaseService(1)
+
+        when:
+        def workerLease = registry.getWorkerLease()
+        coordinationService.withStateLock(lock(workerLease))
+
+        then:
+        noExceptionThrown()
+    }
+
     WorkerLeaseService workerLeaseService(int maxWorkers) {
-        return new DefaultWorkerLeaseService(Mock(ListenerManager), true, maxWorkers)
+        return new DefaultWorkerLeaseService(coordinationService, true, maxWorkers)
     }
 }
