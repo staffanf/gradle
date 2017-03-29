@@ -58,6 +58,72 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         base.parent == javaBase
     }
 
+    def "generates plugin application events for core plugin applied through plugins dsl"() {
+        given:
+        settingsFile << "rootProject.name = 'single'"
+        buildFile << """
+            plugins { 
+                id 'java'
+            }
+        """
+
+        when:
+        def events = new ProgressEvents()
+        withConnection {
+            ProjectConnection connection ->
+                connection.newBuild()
+                    .addProgressListener(events)
+                    .run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def configureRootProject = events.operation("Configure project :")
+        def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'single'")
+
+        def help = events.operation("Apply plugin 'org.gradle.help-tasks'")
+        def java = events.operation("Apply plugin 'org.gradle.java'")
+        def javaBase = events.operation("Apply plugin 'org.gradle.api.plugins.JavaBasePlugin'")
+        def base = events.operation("Apply plugin 'org.gradle.api.plugins.BasePlugin'")
+
+        help.parent == configureRootProject
+        java.parent == applyBuildGradle
+        javaBase.parent == java
+        base.parent == javaBase
+    }
+
+    def "generates plugin application events for community plugin applied through plugins dsl"() {
+        given:
+        settingsFile << "rootProject.name = 'single'"
+        buildFile << """
+            plugins {
+                id "org.gradle.hello-world" version "0.2"
+            }
+        """
+
+        when:
+        def events = new ProgressEvents()
+        withConnection {
+            ProjectConnection connection ->
+                connection.newBuild()
+                    .addProgressListener(events)
+                    .run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def configureRootProject = events.operation("Configure project :")
+        def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'single'")
+
+        def help = events.operation("Apply plugin 'org.gradle.help-tasks'")
+        def helloWorld = events.operation("Apply plugin 'org.gradle.hello-world'")
+
+        help.parent == configureRootProject
+        helloWorld.parent == applyBuildGradle
+    }
+
     def "generates plugin application events for plugin applied in settings script"() {
         given:
         settingsFile << """
