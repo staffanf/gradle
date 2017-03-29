@@ -40,14 +40,15 @@ import org.gradle.api.invocation.Gradle;
 import org.gradle.configuration.ScriptPluginFactory;
 import org.gradle.execution.TaskGraphExecuter;
 import org.gradle.initialization.ClassLoaderScopeRegistry;
+import org.gradle.internal.MutableActionSet;
 import org.gradle.internal.event.ListenerBroadcast;
 import org.gradle.internal.event.ListenerManager;
 import org.gradle.internal.installation.CurrentGradleInstallation;
 import org.gradle.internal.installation.GradleInstallation;
+import org.gradle.internal.operations.BuildOperationContext;
 import org.gradle.internal.progress.BuildOperationExecutor;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.scopes.ServiceRegistryFactory;
-import org.gradle.internal.MutableActionSet;
 import org.gradle.listener.ClosureBackedMethodInvocationDispatch;
 import org.gradle.util.GradleVersion;
 import org.gradle.util.Path;
@@ -81,7 +82,13 @@ public class DefaultGradle extends AbstractPluginAware implements GradleInternal
         buildListenerBroadcast.add(new BuildAdapter() {
             @Override
             public void projectsLoaded(Gradle gradle) {
-                rootProjectActions.execute(rootProject);
+                String displayName = "project " + rootProject.getIdentityPath().toString();
+                getBuildOperationExecutor().run("Configure " + displayName + " (initialization scripts)", new Action<BuildOperationContext>() {
+                    @Override
+                    public void execute(BuildOperationContext buildOperationContext) {
+                        rootProjectActions.execute(rootProject);
+                    }
+                });
                 rootProjectActions = null;
             }
         });

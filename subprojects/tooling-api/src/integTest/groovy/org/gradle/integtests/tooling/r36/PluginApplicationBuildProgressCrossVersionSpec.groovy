@@ -173,7 +173,39 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         examplePlugin.parent == applyInitScript
     }
 
-    def "generates plugin application events for project plugin applied in init script"() {
+    def "generates plugin application events for project plugin applied in init script to root project"() {
+        given:
+        def events = ProgressEvents.create()
+        settingsFile << "rootProject.name = 'single'"
+        def initScript = file('init.gradle')
+        buildFile << ""
+        initScript  << """
+            rootProject { 
+                apply plugin: 'java'
+            }
+        """
+
+        when:
+        withConnection {
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events)
+                .withArguments('--init-script', initScript.toString()).run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def rootOperation = events.operations[0]
+
+        def java = events.operation("Apply plugin 'org.gradle.java'")
+        def javaBase = events.operation("Apply plugin 'org.gradle.api.plugins.JavaBasePlugin'")
+        def base = events.operation("Apply plugin 'org.gradle.api.plugins.BasePlugin'")
+
+        java.parent == rootOperation.child("Configure project : (initialization scripts)")
+        javaBase.parent == java
+        base.parent == javaBase
+    }
+
+    def "generates plugin application events for project plugin applied in init script to all projects"() {
         given:
         def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
@@ -200,7 +232,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         def javaBase = events.operation("Apply plugin 'org.gradle.api.plugins.JavaBasePlugin'")
         def base = events.operation("Apply plugin 'org.gradle.api.plugins.BasePlugin'")
 
-        java.parent == rootOperation.child("Configure project : (nested in allprojects configuration block)")
+        java.parent == rootOperation.child("Configure project : (initialization scripts)").child("Configure project : (nested in allprojects configuration block)")
         javaBase.parent == java
         base.parent == javaBase
     }
