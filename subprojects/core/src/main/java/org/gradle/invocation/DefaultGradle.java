@@ -44,6 +44,7 @@ import org.gradle.internal.event.ListenerBroadcast;
 import org.gradle.internal.event.ListenerManager;
 import org.gradle.internal.installation.CurrentGradleInstallation;
 import org.gradle.internal.installation.GradleInstallation;
+import org.gradle.internal.progress.BuildOperationExecutor;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.scopes.ServiceRegistryFactory;
 import org.gradle.internal.MutableActionSet;
@@ -383,6 +384,11 @@ public class DefaultGradle extends AbstractPluginAware implements GradleInternal
 
     @Inject
     public PluginManagerInternal getPluginManager() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Inject
+    public BuildOperationExecutor getBuildOperationExecutor() {
         throw new UnsupportedOperationException();
     }
 }

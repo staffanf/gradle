@@ -73,6 +73,7 @@ import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 import org.gradle.configuration.project.ProjectEvaluator;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.internal.Actions;
+import org.gradle.internal.Cast;
 import org.gradle.internal.Factories;
 import org.gradle.internal.Factory;
 import org.gradle.internal.event.ListenerBroadcast;
@@ -80,6 +81,7 @@ import org.gradle.internal.logging.LoggingManagerInternal;
 import org.gradle.internal.logging.StandardOutputCapture;
 import org.gradle.internal.metaobject.BeanDynamicObject;
 import org.gradle.internal.metaobject.DynamicObject;
+import org.gradle.internal.operations.BuildOperationContext;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.scopes.ServiceRegistryFactory;
@@ -606,12 +608,12 @@ public class DefaultProject extends AbstractPluginAware implements ProjectIntern
 
     @Override
     public void subprojects(Action<? super Project> action) {
-        configure(getSubprojects(), action);
+        configureProjects(getSubprojects(), action, "subprojects configuration block");
     }
 
     @Override
     public void allprojects(Action<? super Project> action) {
-        configure(getAllprojects(), action);
+        configureProjects(getAllprojects(), action, "allprojects configuration block");
     }
 
     @Override
@@ -1065,22 +1067,45 @@ public class DefaultProject extends AbstractPluginAware implements ProjectIntern
 
     @Override
     public void subprojects(Closure configureClosure) {
-        configure(getSubprojects(), configureClosure);
+        configureProjects(getSubprojects(), configureClosure, "subprojects configuration block");
     }
 
     @Override
     public void allprojects(Closure configureClosure) {
-        configure(getAllprojects(), configureClosure);
+        configureProjects(getAllprojects(), configureClosure, "allprojects configuration block");
     }
 
     @Override
     public Project project(String path, Closure configureClosure) {
-        return ConfigureUtil.configure(configureClosure, project(path));
+        return configureProject(project(path), configureClosure, "project configuration block");
     }
 
     @Override
     public Project project(String path, Action<? super Project> configureAction) {
-        return Actions.with(project(path), configureAction);
+        return configureProject(project(path), configureAction, "project configuration block");
+    }
+
+    private Project configureProject(final Project project, final Object configureClosureOrAction, String provider) {
+        String displayName = "project " + ((ProjectInternal) project).getIdentityPath().toString();
+        gradle.getBuildOperationExecutor().run("Configure " + displayName + " (nested in " + provider + ")", new Action<BuildOperationContext>() {
+            @Override
+            public void execute(BuildOperationContext buildOperationContext) {
+                if (configureClosureOrAction instanceof Closure) {
+                    configure(project, (Closure) configureClosureOrAction);
+                } else if (configureClosureOrAction instanceof Action) {
+                    Action<? super Project> action = Cast.uncheckedCast(configureClosureOrAction);
+                    Actions.with(project, action);
+                }
+            }
+        });
+        return project;
+    }
+
+    private Iterable<Project> configureProjects(Iterable<Project> projects, Object configureClosureOrAction, String provider) {
+        for (Project project : projects) {
+            configureProject(project, configureClosureOrAction, provider);
+        }
+        return projects;
     }
 
     @Override

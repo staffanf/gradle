@@ -29,16 +29,15 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for single project build"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
-        javaProject()
+        buildFile << """
+            apply plugin: 'java'
+        """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -60,6 +59,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for core plugin applied through plugins dsl"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
         buildFile << """
             plugins { 
@@ -68,12 +68,8 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -95,6 +91,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for community plugin applied through plugins dsl"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
         buildFile << """
             plugins {
@@ -103,12 +100,8 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -126,6 +119,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for plugin applied in settings script"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << """
             rootProject.name = 'single'
             apply plugin: ExamplePlugin
@@ -137,12 +131,8 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         buildFile << ""
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -156,6 +146,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for plugin applied in init script"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
         def initScript = file('init.gradle')
         buildFile << ""
@@ -168,13 +159,9 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .withArguments('--init-script', initScript.toString())
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events)
+                .withArguments('--init-script', initScript.toString()).run()
         }
 
         then:
@@ -188,6 +175,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events for project plugin applied in init script"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << "rootProject.name = 'single'"
         def initScript = file('init.gradle')
         buildFile << ""
@@ -198,13 +186,9 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .withArguments('--init-script', initScript.toString())
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events)
+                .withArguments('--init-script', initScript.toString()).run()
         }
 
         then:
@@ -216,25 +200,22 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         def javaBase = events.operation("Apply plugin 'org.gradle.api.plugins.JavaBasePlugin'")
         def base = events.operation("Apply plugin 'org.gradle.api.plugins.BasePlugin'")
 
-        java.parent == rootOperation
+        java.parent == rootOperation.child("Configure project : (nested in allprojects configuration block)")
         javaBase.parent == java
         base.parent == javaBase
     }
 
     def "generates plugin application events for multi-project build"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << """
             rootProject.name = 'multi'
             include 'a', 'b'
         """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -252,6 +233,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 
     def "generates plugin application events when configuration fails"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << """
             rootProject.name = 'multi'
             include 'a', 'b'
@@ -261,12 +243,8 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
 """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -284,28 +262,21 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         events.operation("Configure project :a").failed
     }
 
-    def "generates events for plugin application where project configuration is nested"() {
+    def "generates events for plugin application where project configuration is nested in allprojects closure"() {
         given:
+        def events = ProgressEvents.create()
         settingsFile << """
             rootProject.name = 'multi'
             include 'a', 'b'
-        """.stripIndent()
+        """
         buildFile << """
             allprojects { apply plugin: 'java' }
-            
-            evaluationDependsOn(':a')
-        """.stripIndent()
-        file("a/build.gradle") << """
-            evaluationDependsOn(':b')
-        """.stripIndent()
+        """
+
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
@@ -316,7 +287,7 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         configureRoot.children("Apply plugin 'org.gradle.java'").empty
 
         def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'multi'")
-        applyBuildGradle.children("Apply plugin 'org.gradle.java'").size() == 3
+        applyBuildGradle.children("Apply plugin 'org.gradle.java'").size() == 0
 
         def configureA = events.operation("Configure project :a")
         configureA.child("Apply plugin 'org.gradle.help-tasks'")
@@ -325,34 +296,113 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         def configureB = events.operation("Configure project :b")
         configureB.child("Apply plugin 'org.gradle.help-tasks'")
         configureB.children("Apply plugin'org.gradle.java'").empty
+
+        applyBuildGradle.child("Configure project : (nested in allprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+        applyBuildGradle.child("Configure project :a (nested in allprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+        applyBuildGradle.child("Configure project :b (nested in allprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+    }
+
+    def "generates events for plugin application where project configuration is nested in subprojects closure"() {
+        given:
+        def events = ProgressEvents.create()
+        settingsFile << """
+            rootProject.name = 'multi'
+            include 'a', 'b'
+        """
+        buildFile << """
+            subprojects { apply plugin: 'java' }
+        """
+
+        when:
+        withConnection {
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'multi'")
+
+        applyBuildGradle.children.size() == 2
+        applyBuildGradle.child("Configure project :a (nested in subprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+        applyBuildGradle.child("Configure project :b (nested in subprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+    }
+
+    def "generates events for plugin application where project configuration is nested in project closure"() {
+        given:
+        def events = ProgressEvents.create()
+        settingsFile << """
+            rootProject.name = 'multi'
+            include 'a', 'b'
+        """
+        buildFile << """
+            project(':a') { apply plugin: 'java' }
+        """
+
+        when:
+        withConnection {
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'multi'")
+
+        applyBuildGradle.children.size() == 1
+        applyBuildGradle.child("Configure project :a (nested in project configuration block)").child("Apply plugin 'org.gradle.java'")
+    }
+
+    def "generates events for plugin application where project configuration is nested in project configuration action"() {
+        given:
+        def events = ProgressEvents.create()
+        settingsFile << """
+            rootProject.name = 'multi'
+            include 'a', 'b'
+        """
+        buildFile << """
+            project(':b', new Action<Project>() { void execute(Project project) { project.apply plugin: 'java' } })
+        """
+
+        when:
+        withConnection {
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
+        }
+
+        then:
+        events.assertIsABuild()
+
+        def applyBuildGradle = events.operation("Apply build file '${buildFile.absolutePath}' to root project 'multi'")
+
+        applyBuildGradle.children.size() == 1
+        applyBuildGradle.child("Configure project :b (nested in project configuration block)").child("Apply plugin 'org.gradle.java'")
     }
 
     def "generates plugin application events for buildSrc"() {
         given:
+        def events = ProgressEvents.create()
         buildSrc()
-        javaProject()
+        buildFile << """
+            apply plugin: 'java'
+        """
 
         when:
-        def events = new ProgressEvents()
         withConnection {
-            ProjectConnection connection ->
-                connection.newBuild()
-                    .addProgressListener(events)
-                    .run()
+            ProjectConnection connection -> connection.newBuild().addProgressListener(events).run()
         }
 
         then:
         events.assertIsABuild()
 
         def buildSrc = events.operation("Build buildSrc")
-        buildSrc.child("Apply plugin 'org.gradle.api.plugins.GroovyPlugin'")
+        def groovyPlugin = buildSrc.child("Apply plugin 'org.gradle.api.plugins.GroovyPlugin'")
 
         def configureBuildSrcRoot = buildSrc.child("Configure build").child("Configure project :buildSrc")
         configureBuildSrcRoot.child("Apply plugin 'org.gradle.help-tasks'")
         configureBuildSrcRoot.children("Apply plugin 'org.gradle.java'").empty
 
         def applyBuildSrcBuildGradle = events.operation("Apply build file '${file("buildSrc/build.gradle").absolutePath}' to project ':buildSrc'")
-        applyBuildSrcBuildGradle.children("Apply plugin 'org.gradle.java'").size() == 2
+        applyBuildSrcBuildGradle.children("Apply plugin 'org.gradle.java'").size() == 0
 
         def configureBuildSrcA = buildSrc.child("Configure build").child("Configure project :buildSrc:a")
         configureBuildSrcA.child("Apply plugin 'org.gradle.help-tasks'")
@@ -361,14 +411,11 @@ class PluginApplicationBuildProgressCrossVersionSpec extends ToolingApiSpecifica
         def configureBuildSrcB = buildSrc.child("Configure build").child("Configure project :buildSrc:b")
         configureBuildSrcB.child("Apply plugin 'org.gradle.help-tasks'")
         configureBuildSrcB.children("Apply plugin 'org.gradle.java'").empty
-    }
 
-    private javaProject() {
-        buildFile << """
-            allprojects { 
-                apply plugin: 'java'
-            }
-        """
+        groovyPlugin.child("Apply plugin 'org.gradle.api.plugins.JavaPlugin'") //buildSrc root automatically applies Java plugin
+        applyBuildSrcBuildGradle.child("Configure project :buildSrc (nested in allprojects configuration block)").children.empty
+        applyBuildSrcBuildGradle.child("Configure project :buildSrc:a (nested in allprojects configuration block)").child("Apply plugin 'org.gradle.java'")
+        applyBuildSrcBuildGradle.child("Configure project :buildSrc:b (nested in allprojects configuration block)").child("Apply plugin 'org.gradle.java'")
     }
 
     private buildSrc() {
